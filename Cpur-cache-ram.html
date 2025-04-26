@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ALU + CPU-Cache-RAM Simülasyonu</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
+        input, select, button { margin: 5px; padding: 10px; font-size: 16px; }
+        .section { margin-top: 20px; }
+        .cache, .ram { display: flex; justify-content: center; margin-top: 10px; }
+        .block { width: 60px; height: 60px; margin: 5px; border: 2px solid black; display: flex; align-items: center; justify-content: center; background-color: #f0f0f0; }
+        .cpu { font-size: 24px; margin-top: 20px; }
+        .arrow { font-size: 30px; margin: 0 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>🧠 ALU + CPU-Cache-RAM Simülasyonu</h1>
+
+    <!-- ALU Alanı -->
+    <div class="section">
+        <h2>Basit ALU</h2>
+        <input type="number" id="a" placeholder="A sayısı (0-255)">
+        <input type="number" id="b" placeholder="B sayısı (0-255)">
+        <select id="operation">
+            <option value="add">Toplama (A+B)</option>
+            <option value="sub">Çıkarma (A-B)</option>
+            <option value="mul">Çarpma (A*B)</option>
+            <option value="div">Bölme (A/B)</option>
+        </select>
+        <button onclick="performALU()">İşlem Yap</button>
+        <h3 id="aluResult">Sonuç: </h3>
+    </div>
+
+    <!-- CPU - Cache - RAM Alanı -->
+    <div class="section">
+        <h2>CPU ➔ Cache ➔ RAM Veri Akışı</h2>
+
+        <div class="cpu">🖥️ CPU</div>
+        <div class="arrow">⬇️</div>
+
+        <h3>Cache (4 hücre)</h3>
+        <div class="cache" id="cache"></div>
+
+        <div class="arrow">⬇️</div>
+
+        <h3>RAM (8 hücre)</h3>
+        <div class="ram" id="ram"></div>
+
+        <h3 id="status">Durum: </h3>
+    </div>
+
+    <script>
+        const cacheSize = 4;
+        const ramSize = 8;
+        let cache = [];  // FIFO cache
+        let ram = Array(ramSize).fill(0); // RAM başlangıçta sıfırlarla dolu
+
+        function updateDisplay() {
+            const cacheDiv = document.getElementById('cache');
+            const ramDiv = document.getElementById('ram');
+            cacheDiv.innerHTML = '';
+            ramDiv.innerHTML = '';
+
+            cache.forEach(entry => {
+                const block = document.createElement('div');
+                block.className = 'block';
+                block.innerText = `${entry.addr}:${entry.value}`;
+                cacheDiv.appendChild(block);
+            });
+
+            ram.forEach((value, index) => {
+                const block = document.createElement('div');
+                block.className = 'block';
+                block.innerText = `${index}:${value}`;
+                ramDiv.appendChild(block);
+            });
+        }
+
+        function accessMemory(address, newValue = null) {
+            let status = "";
+
+            // İlk cache'de arıyoruz
+            let cacheHit = cache.find(entry => entry.addr === address);
+
+            if (cacheHit) {
+                status = `CACHE HIT! Adres ${address}`;
+                if (newValue !== null) cacheHit.value = newValue; // Değişiklik yap
+            } else {
+                status = `CACHE MISS! Adres ${address} RAM'den çekiliyor.`;
+                const ramValue = ram[address];
+
+                if (cache.length >= cacheSize) {
+                    cache.shift(); // FIFO: en eskiyi çıkar
+                }
+                cache.push({ addr: address, value: newValue !== null ? newValue : ramValue });
+            }
+
+            // RAM güncelle
+            if (newValue !== null) {
+                ram[address] = newValue;
+            }
+
+            document.getElementById('status').innerText = status;
+            updateDisplay();
+        }
+
+        function performALU() {
+            const a = parseInt(document.getElementById('a').value) || 0;
+            const b = parseInt(document.getElementById('b').value) || 0;
+            const op = document.getElementById('operation').value;
+            let result = 0;
+
+            switch (op) {
+                case "add":
+                    result = (a + b) & 0xFF;
+                    break;
+                case "sub":
+                    result = (a - b) & 0xFF;
+                    break;
+                case "mul":
+                    result = (a * b) & 0xFF;
+                    break;
+                case "div":
+                    result = b === 0 ? 0 : Math.floor(a / b) & 0xFF;
+                    break;
+            }
+
+            document.getElementById('aluResult').innerText = `Sonuç: ${result} (Binary: ${result.toString(2).padStart(8, '0')})`;
+
+            // ALU işleminden sonra RAM'deki bir adrese sonucu yazalım
+            const address = a % ramSize; // Örneğin A değerinin mod ramSize adresini kullanalım
+            accessMemory(address, result);
+        }
+
+        // Başlangıç RAM ve Cache görüntülemesi
+        updateDisplay();
+    </script>
+
+</body>
+</html>

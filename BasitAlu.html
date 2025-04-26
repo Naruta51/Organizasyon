@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Gelişmiş ALU (8/16 bit)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .alu-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 400px;
+        }
+        input, select, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            width: 80%;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .bit-selector {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="alu-container">
+    <h1>Gelişmiş ALU</h1>
+    
+    <div class="bit-selector">
+        <label>
+            <input type="radio" name="bitSize" value="8" checked> 8-bit
+        </label>
+        <label>
+            <input type="radio" name="bitSize" value="16"> 16-bit
+        </label>
+    </div>
+
+    <input type="text" id="inputA" placeholder="A değeri (Hex örn: 1F)" />
+    <input type="text" id="inputB" placeholder="B değeri (Hex örn: 0A)" />
+
+    <select id="operation">
+        <option value="add">Toplama (A+B)</option>
+        <option value="sub">Çıkarma (A-B)</option>
+        <option value="and">AND (A & B)</option>
+        <option value="or">OR (A | B)</option>
+        <option value="xor">XOR (A ^ B)</option>
+        <option value="nand">NAND (~(A & B))</option>
+        <option value="nor">NOR (~(A | B))</option>
+        <option value="notA">NOT A (~A)</option>
+        <option value="notB">NOT B (~B)</option>
+    </select>
+    
+    <br>
+    <button onclick="calculate()">Hesapla</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+function calculate() {
+    const bitSize = document.querySelector('input[name="bitSize"]:checked').value;
+    const mask = (bitSize == "8") ? 0xFF : 0xFFFF; // 8-bit -> 0xFF, 16-bit -> 0xFFFF
+
+    const aHex = document.getElementById('inputA').value.trim();
+    const bHex = document.getElementById('inputB').value.trim();
+
+    // Eğer boş bırakılırsa 0 olarak kabul edelim
+    const a = aHex ? parseInt(aHex, 16) & mask : 0;
+    const b = bHex ? parseInt(bHex, 16) & mask : 0;
+
+    const operation = document.getElementById('operation').value;
+    let result = 0;
+
+    switch(operation) {
+        case 'add':
+            result = (a + b) & mask;
+            break;
+        case 'sub':
+            result = (a - b) & mask;
+            break;
+        case 'and':
+            result = a & b;
+            break;
+        case 'or':
+            result = a | b;
+            break;
+        case 'xor':
+            result = a ^ b;
+            break;
+        case 'nand':
+            result = ~(a & b) & mask;
+            break;
+        case 'nor':
+            result = ~(a | b) & mask;
+            break;
+        case 'notA':
+            result = ~a & mask;
+            break;
+        case 'notB':
+            result = ~b & mask;
+            break;
+        default:
+            result = 0;
+    }
+
+    const isZero = (result === 0) ? "Evet" : "Hayır";
+
+    // Çıktıları hexadecimal ve binary formatında gösterelim
+    const hexResult = result.toString(16).toUpperCase().padStart(bitSize/4, '0');
+    const binResult = result.toString(2).padStart(bitSize, '0');
+
+    document.getElementById('result').innerHTML = `
+        Sonuç (Hex): 0x${hexResult} <br>
+        Sonuç (Binary): ${binResult} <br>
+        Zero Flag: ${isZero}
+    `;
+}
+</script>
+
+</body>
+</html>
